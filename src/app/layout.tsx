@@ -34,7 +34,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} data-cursorstyle="true" data-effect-ective="true">
         <body>
           <header className="flex justify-end items-center p-4 gap-4 h-16">
             <SignedOut>
