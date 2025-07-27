@@ -8,7 +8,7 @@ export function AuthForm() {
       return (
         <div className="flex items-center gap-4">
           <span className="text-sm text-white">
-            welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}!
+            welcome, {user?.firstName ?? user?.emailAddresses[0]?.emailAddress}!
           </span>
           <UserButton />
         </div>
