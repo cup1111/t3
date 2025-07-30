@@ -1,9 +1,11 @@
 "use client";
 
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { api } from "~/trpc/react";
+
 export function AuthForm() {
     const { user, isSignedIn } = useUser();
-  
+    const { data } = api.post.getAll.useQuery();
     if (isSignedIn) {
       return (
         <div className="flex items-center gap-4">
