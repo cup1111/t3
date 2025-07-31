@@ -8,6 +8,7 @@ import type { AppRouter } from "~/server/api/root";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { LoadingPage, LoadingSpinner } from "./loading";
 
 dayjs.extend(relativeTime);
 
@@ -15,13 +16,15 @@ export function LatestPost() {
   const { data: posts, isLoading } = api.post.getAll.useQuery();
   const { user } = useUser();
   if (!user) return <div>Please sign in</div>;
+
   if (isLoading) {
-    return <div>Loading posts...</div>;
+    return <LoadingPage />;
   }
-  if (!posts) {
+  if (!posts || posts.length === 0) {
     return <div>No posts found</div>;
   }
 
+  
   type RouterOutputs = inferRouterOutputs<AppRouter>;
   type postWithAuthor = {
     post: RouterOutputs["post"]["getAll"][number]["post"];
