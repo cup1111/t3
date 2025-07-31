@@ -5,6 +5,11 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+    images: {
+        remotePatterns: [new URL('https://img.clerk.com/**')],
+      },
+};
 
 export default config;
+

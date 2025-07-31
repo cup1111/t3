@@ -11,9 +11,11 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+      <main className="flex justify-center h-screen">
+        <div className="bg-black border-2 border-slate-400 w-full md:max-w-2xl">
         <AuthForm />
         <LatestPost />
+        </div>
       </main>
     </HydrateClient>
   );
