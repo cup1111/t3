@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser, SignInButton, SignUpButton, SignOutButton } from "@clerk/nextjs";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import Image from "next/image";
 import { useState } from "react";

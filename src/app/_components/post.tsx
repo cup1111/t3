@@ -8,7 +8,7 @@ import type { AppRouter } from "~/server/api/root";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
-import { LoadingPage, LoadingSpinner } from "./loading";
+import { LoadingPage } from "./loading";
 
 dayjs.extend(relativeTime);
 
