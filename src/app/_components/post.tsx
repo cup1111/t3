@@ -40,7 +40,7 @@ export function LatestPost() {
             <span>{`@${author.username}`}</span>
             <span className="font-thin">{`· ${dayjs(post.createdAt).fromNow()}`}</span>
           </div>
-        {post.content}
+        <div className="text-2xl">{post.content}</div>
         </div>
       </div>
     )
