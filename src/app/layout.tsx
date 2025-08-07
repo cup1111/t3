@@ -12,6 +12,7 @@ import {
   UserButton,
 } from '@clerk/nextjs';
 import { TRPCReactProvider } from "~/trpc/react";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: 'Clerk Next.js Quickstart',
@@ -34,6 +35,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
+      <Toaster position="bottom-center" />
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} data-cursorstyle="true" data-effect-ective="true">
         <body>
           <header className="flex justify-end items-center p-4 gap-4 h-16">
