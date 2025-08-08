@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { LoadingPage } from "./loading";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -34,11 +35,15 @@ export function LatestPost() {
     const { post, author } = props;
     return (
       <div key={post.id} className="flex gap-3 p-4 border-b border-slate-400">
-        <Image src={author.imageUrl} alt={`${author.username}'s profile image`} width={48} height={48} className="rounded-full"/>
+        <Image src={author.imageUrl} alt={`${author.username}'s profile image`} width={48} height={48} className="rounded-full h-12 w-12"/>
         <div className="flex flex-col">
           <div className="flex text-slate-300 font-medium gap-2">
-            <span>{`@${author.username}`}</span>
-            <span className="font-thin">{`· ${dayjs(post.createdAt).fromNow()}`}</span>
+            <Link href={`/${author.username}`}>
+              <span>{`@${author.username}`}</span>
+            </Link>
+            <Link href={`/post/${post.id}`}>
+              <span className="font-thin">{`· ${dayjs(post.createdAt).fromNow()}`}</span>
+            </Link>
           </div>
         <div className="text-2xl">{post.content}</div>
         </div>
