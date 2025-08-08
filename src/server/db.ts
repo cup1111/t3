@@ -14,6 +14,16 @@ export const db =
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 
-process.on("beforeExit", async () => {
+
+const gracefulShutdown = async () => {
   await db.$disconnect();
+  process.exit(0);
+};
+
+process.on("SIGINT", () => {
+  void gracefulShutdown();
+});
+
+process.on("SIGTERM", () => {
+  void gracefulShutdown();
 });
