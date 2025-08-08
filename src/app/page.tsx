@@ -5,8 +5,11 @@ import { LatestPost } from "~/app/_components/post";
 import { PageHeader } from "~/app/_components/page_header";
 
 export default async function Home() {
-  void api.post.getAll.prefetch();
-
+  try {
+    void api.post.getAll.prefetch();
+  } catch (error) {
+    console.error("Failed to prefetch posts:", error);
+  }
   return (
     <HydrateClient>
       <main className="flex justify-center min-h-screen bg-black">
