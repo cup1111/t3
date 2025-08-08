@@ -34,7 +34,7 @@ export function PostView({ post, author, showLink = true }: PostViewProps) {
       void utils.post.getAll.invalidate();
       void utils.post.getByUserId.invalidate();
     },
-    onError: (error) => {
+    onError: () => {
       toast.error("Failed to delete post");
     }
   });
