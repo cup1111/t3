@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { createCaller } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
 import Head from "next/head";
-import { LatestPost } from "../_components/post";
-import { AuthForm } from "../_components/authform";
+import { UserProfile } from "./_components/user_profile";
 
 export default async function ProfilePage({ 
     params 
@@ -20,7 +19,7 @@ export default async function ProfilePage({
 
 const caller = createCaller(await createTRPCContext({ headers: new Headers() }));
 
-const user = (await caller.profile.getUserByUsername({ username }))[0];
+const user = (await caller.profile.getUserByUsername({ username }));
 
 
 if (!user) {
@@ -34,8 +33,7 @@ return (
           <div className="border-b border-slate-400 p-4">
             <h1 className="text-xl font-bold text-white">Home</h1>
           </div>
-          <AuthForm />
-          <LatestPost />
+          <UserProfile user={user} />
         </div>
       </main>
     </HydrateClient>

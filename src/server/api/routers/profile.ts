@@ -13,11 +13,14 @@ export const profileRouter = createTRPCRouter({
         const user = (await clerk.users.getUserList({
             username: [username],
           })
-          ).data.map(filterUserForClient);
+          ).data.map(filterUserForClient)[0];
 
-        if (!user) {
+        if (!user?.username) {
             throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
         }
-        return user;
+        return {
+            ...user,
+            username: user.username,
+        };
     }),
 });
