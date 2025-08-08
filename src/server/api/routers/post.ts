@@ -58,7 +58,6 @@ export const postRouter = createTRPCRouter({
     });
     return post;
   }),
-
   getByUserId: privateProcedure
   .input(z.object({ userId: z.string() }))
   .query(async ({ ctx, input }) => {
@@ -92,4 +91,33 @@ export const postRouter = createTRPCRouter({
       } };
     });
   }),
+  delete: privateProcedure
+  .input(z.object({ postId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const { userId } = ctx;
+    const { postId } = input;
+
+    const post = await ctx.db.post.findFirst({
+      where: {
+        id: postId,
+        authorId: userId,
+      },
+    });
+
+    if (!post) {
+      throw new TRPCError({ 
+        code: "NOT_FOUND", 
+        message: "Post not found or you don't have permission to delete it" 
+      });
+    }
+
+    await ctx.db.post.delete({
+      where: {
+        id: postId,
+      },
+    });
+
+    return { success: true };
+  }),
+
 });
