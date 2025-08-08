@@ -1,15 +1,10 @@
 import { api, HydrateClient } from "~/trpc/server";
 import { AuthForm } from "~/app/_components/authform";
 import { LatestPost } from "~/app/_components/post";
-
 import { PageHeader } from "~/app/_components/page_header";
 
 export default async function Home() {
-  try {
-    void api.post.getAll.prefetch();
-  } catch (error) {
-    console.error("Failed to prefetch posts:", error);
-  }
+
   return (
     <HydrateClient>
       <main className="flex justify-center min-h-screen bg-black">
