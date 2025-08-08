@@ -11,10 +11,10 @@ export const LoadingSpinner = (props: {size?: number}) => {
     </div>)
 }
 
-export const LoadingPage = () => {
+export function LoadingPage() {
     return (
-        <div className="absolute top-0 left-0 flex justify-center items-center h-screen w-full">
-            <LoadingSpinner size={60} />
-        </div>
-    )
-}
+      <div className="flex justify-center items-center py-12">
+        <LoadingSpinner size={60} />
+      </div>
+    );
+  }

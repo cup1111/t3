@@ -1,13 +1,11 @@
-// src/app/[slug]/_components/user_profile.tsx
 "use client";
-
 import { api } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
-import Link from "next/link";
 import { LoadingPage } from "~/app/_components/loading";
-import { CreatePostWizard } from "~/app/_components/authform";
+import { CreatePostWizard } from "~/app/_components/create_post_wizard";
 import { PostView } from "~/app/_components/post_view";
+import { PageHeader } from "~/app/_components/page_header";
 
 interface UserProfileProps {
   user: {
@@ -25,33 +23,25 @@ export function UserProfile({ user }: UserProfileProps) {
 
   return (
     <div className="flex flex-col bg-black min-h-screen">
-      <div className="sticky top-0 z-10 bg-black border-b border-slate-800">
-        <div className="flex items-center gap-4 p-4">
-          <Link href="/" className="text-white hover:text-slate-300 transition-colors">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-            </svg>
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-white">@{user.username}</h1>
-            <p className="text-slate-400 text-sm">{posts?.length || 0} posts</p>
-          </div>
-        </div>
-      </div>
+
+      <PageHeader />
+
 
       <div className="relative">
         <div className="h-48 bg-slate-700 w-full"></div>
         
+
         <div className="absolute -bottom-16 left-4">
           <Image 
             src={user.imageUrl} 
             alt={`${user.username}'s profile image`} 
             width={128} 
             height={128} 
-            className="rounded-full border-4 border-black"
+            className="rounded-full border-4 border-black w-32 h-32"
           />
         </div>
       </div>
+
 
       <div className="pt-20 px-4 pb-4 border-b border-slate-800">
         <div className="flex justify-between items-start">
@@ -61,40 +51,20 @@ export function UserProfile({ user }: UserProfileProps) {
               {posts?.length || 0} posts
             </p>
           </div>
-          
-          {currentUser?.username === user.username && (
-            <button className="px-4 py-2 border border-slate-600 text-white rounded-full hover:bg-slate-800 transition-colors">
-              Edit profile
-            </button>
-          )}
         </div>
-      </div>
-
-      <div className="flex border-b border-slate-800">
-        <button className="flex-1 py-4 text-white font-medium border-b-2 border-blue-500">
-          Posts
-        </button>
-        <button className="flex-1 py-4 text-slate-400 font-medium hover:text-white transition-colors">
-          Replies
-        </button>
-        <button className="flex-1 py-4 text-slate-400 font-medium hover:text-white transition-colors">
-          Media
-        </button>
-        <button className="flex-1 py-4 text-slate-400 font-medium hover:text-white transition-colors">
-          Likes
-        </button>
       </div>
 
       {currentUser?.username === user.username && (
-        <div className="border-b border-slate-800">
-          <CreatePostWizard />
-        </div>
+        <CreatePostWizard />
       )}
+
 
       <div className="flex flex-col">
         {isLoading ? (
-          <LoadingPage />
-        ) : !posts || posts.length === 0 ? (
+          <div className="flex justify-center items-center py-12">
+            <LoadingPage />
+          </div>
+        ) : !posts ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-slate-400" fill="currentColor" viewBox="0 0 24 24">

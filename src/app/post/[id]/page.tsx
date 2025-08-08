@@ -11,7 +11,7 @@ dayjs.extend(relativeTime);
 const SinglePost = () => {
   const { data: posts, isLoading } = api.post.getAll.useQuery();
   const { user } = useUser();
-  if (!user) return <div>Please sign in</div>;
+  if (!user) return <div></div>;
 
     if (isLoading) {
         return <LoadingPage />;

@@ -1,20 +1,20 @@
-//import Link from "next/link";
-
-//import { LatestPost } from "~/app/_components/post";
+// src/app/page.tsx
 import { api, HydrateClient } from "~/trpc/server";
 import { AuthForm } from "~/app/_components/authform";
 import { LatestPost } from "~/app/_components/post";
-export default async function Home() {
-//  const hello = await api.post.hello({ text: "from tRPC" });
 
+import { PageHeader } from "~/app/_components/page_header";
+
+export default async function Home() {
   void api.post.getAll.prefetch();
 
   return (
     <HydrateClient>
-      <main className="flex justify-center h-screen">
-        <div className="bg-black border-2 border-slate-400 w-full md:max-w-2xl">
-        <AuthForm />
-        <LatestPost />
+      <main className="flex justify-center min-h-screen bg-black">
+        <div className="bg-black border-x border-slate-800 w-full md:max-w-2xl">
+          <PageHeader />
+          <AuthForm />
+          <LatestPost />
         </div>
       </main>
     </HydrateClient>

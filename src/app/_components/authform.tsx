@@ -1,79 +1,38 @@
 "use client";
 
-import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { api } from "~/trpc/react";
-import Image from "next/image";
-import { useState } from "react";
-import { toast } from "react-hot-toast";
-import { LoadingSpinner } from "./loading";
-
-export const CreatePostWizard = () => {
-  const { user } = useUser();
-  const utils = api.useUtils();
-  const { mutate: createPost, isPending } = api.post.create.useMutation({
-    onSuccess: () => {
-      setInput("");
-      void utils.post.getAll.invalidate();
-      toast.success("Post created successfully");
-    },
-    onError: (error) => {
-      const errorMessage = error.data?.zodError?.fieldErrors.content;
-      if (errorMessage?.[0]) {
-        toast.error(errorMessage[0]);
-      } else {
-        toast.error("Failed to post. Please try again later.");
-      }
-    }
-  });
-  const [input, setInput] = useState("");
-
-  if (!user) return null;
-  return (
-    <div className="flex-1 flex border-2 border-slate-400 p-4 gap-2">
-      <Image src={user.imageUrl} alt={`${user.username}'s profile image`} width={48} height={48} className="rounded-full" />
-      <span className="text-sm text-white">{user.username}</span>
-      <input
-        placeholder="Type your emoji here..."
-        className="flex-1 bg-transparent outline-none"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        disabled={isPending}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            if (input !== "") {
-              createPost({ content: input });
-            }
-          }
-        }}
-      />
-      {input !== "" && !isPending && (
-        <button onClick={() => createPost({ content: input })}>
-          Post
-        </button>
-      )}
-      {isPending && (
-        <div className="flex items-center gap-3">
-          <LoadingSpinner size={30} />
-        </div>
-      )}
-    </div>
-  )
-}
+import { useUser, SignInButton } from "@clerk/nextjs";
+import { CreatePostWizard } from "./create_post_wizard";
+import { LoadingPage } from "./loading";
 
 export function AuthForm() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
+  
+  if (!isLoaded) {
+    return <LoadingPage />;
+  }
+  
   if (isSignedIn) {
     return (
-      <div className="flex items-center gap-4">
+      <div className="border-b border-slate-800">
         <CreatePostWizard />
       </div>
     );
   }
+  
   return (
-    <div className="flex items-center gap-4 border-2 border-blue-500 p-4">
-      <SignInButton />
-      <SignUpButton />
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-white mb-4">T3-emoji😄</h1>
+        <p className="text-slate-400 text-lg">
+          Share your thoughts with emojis
+        </p>
+      </div>
+      
+      <SignInButton mode="modal">
+        <button className="px-8 py-3 bg-blue-500 text-white rounded-full font-medium hover:bg-blue-600 transition-colors">
+          Click to start
+        </button>
+      </SignInButton>
     </div>
   );
 }

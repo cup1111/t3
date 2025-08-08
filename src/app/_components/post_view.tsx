@@ -1,7 +1,6 @@
 // src/app/_components/post-view.tsx
 "use client";
 
-import { api } from "~/trpc/react";
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from "~/server/api/root";
 import dayjs from "dayjs";
