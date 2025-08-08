@@ -1,4 +1,4 @@
-// src/app/_components/post-view.tsx
+// src/app/_components/post_view.tsx
 "use client";
 
 import { api } from "~/trpc/react";

@@ -21,9 +21,13 @@ export function LatestPost() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       {posts.map(({ post, author }) => (
-        <PostView key={post.id} post={post} author={author} />
+        <PostView 
+          key={post.id}
+          post={post} 
+          author={author} 
+        />
       ))}
     </div>
   );
