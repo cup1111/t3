@@ -39,7 +39,7 @@ export const CreatePostWizard = () => {
     <div className="flex w-full items-center gap-3 p-4 border-b border-t border-slate-400">
       <Image 
         src={user.imageUrl} 
-        alt={`${user.username}'s profile image`} 
+        alt={`${user.username}&apos;s profile image`} 
         width={48} 
         height={48} 
         className="rounded-full w-12 h-12 flex-shrink-0" 

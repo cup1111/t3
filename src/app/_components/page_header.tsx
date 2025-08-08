@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -13,13 +12,13 @@ export function PageHeader() {
     if (pathname === "/") {
       return "T3-emoji";
     }
-    
-    const userMatch = pathname.match(/^\/@([^\/]+)$/);
+
+    const userMatch = /^\/@([^\/]+)$/.exec(pathname);
     if (userMatch) {
       return `@${userMatch[1]}`;
     }
     
-    const postMatch = pathname.match(/^\/post\/(.+)$/);
+    const postMatch = /^\/post\/(.+)$/.exec(pathname);
     if (postMatch) {
       return "Post";
     }
@@ -27,7 +26,7 @@ export function PageHeader() {
     return "T3-emoji😄";
   };
 
-  const isProfilePage = pathname.match(/^\/@([^\/]+)$/);
+  const isProfilePage = /^\/@([^\/]+)$/.exec(pathname);
   const currentUsername = user?.username;
 
   return (

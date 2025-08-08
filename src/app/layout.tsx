@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
@@ -9,6 +8,7 @@ import {
 } from '@clerk/nextjs';
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "react-hot-toast";
+import { ErrorBoundary } from "~/app/_components/error_boundary";
 
 export const metadata: Metadata = {
   title: 'T3-Clone',
@@ -34,7 +34,9 @@ export default function RootLayout({
       <Toaster position="bottom-center" />
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} data-cursorstyle="true" data-effect-ective="true">
         <body>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <ErrorBoundary>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </ErrorBoundary>
         </body>
       </html>
     </ClerkProvider>

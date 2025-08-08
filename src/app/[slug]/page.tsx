@@ -1,4 +1,3 @@
-// src/app/[slug]/page.tsx
 import { HydrateClient } from "~/trpc/server";
 import { createCaller } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";

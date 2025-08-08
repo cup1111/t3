@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import { api, HydrateClient } from "~/trpc/server";
 import { AuthForm } from "~/app/_components/authform";
 import { LatestPost } from "~/app/_components/post";

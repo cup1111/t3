@@ -1,4 +1,3 @@
-// src/app/_components/post_view.tsx
 "use client";
 
 import { api } from "~/trpc/react";
@@ -50,7 +49,7 @@ export function PostView({ post, author, showLink = true }: PostViewProps) {
     <div className="flex gap-3 p-4 border-b border-slate-400 hover:bg-slate-900 transition-colors">
       <Image 
         src={author.imageUrl} 
-        alt={`${author.username}'s profile image`} 
+        alt={`${author.username}&apos;s profile image`} 
         width={48} 
         height={48} 
         className="rounded-full h-12 w-12 flex-shrink-0"

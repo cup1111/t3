@@ -6,6 +6,7 @@ import { LoadingPage } from "~/app/_components/loading";
 import { CreatePostWizard } from "~/app/_components/create_post_wizard";
 import { PostView } from "~/app/_components/post_view";
 import { PageHeader } from "~/app/_components/page_header";
+import { useMemo } from "react";
 
 interface UserProfileProps {
   user: {
@@ -21,6 +22,13 @@ export function UserProfile({ user }: UserProfileProps) {
   });
   const { user: currentUser } = useUser();
 
+  const postElements = useMemo(() => {
+    if (!posts) return null;
+    return posts.map(({ post, author }) => (
+      <PostView key={post.id} post={post} author={author} showLink={false} />
+    ));
+  }, [posts]);
+
   return (
     <div className="flex flex-col bg-black min-h-screen">
 
@@ -34,7 +42,7 @@ export function UserProfile({ user }: UserProfileProps) {
         <div className="absolute -bottom-16 left-4">
           <Image 
             src={user.imageUrl} 
-            alt={`${user.username}'s profile image`} 
+            alt={`${user.username}&apos;s profile image`} 
             width={128} 
             height={128} 
             className="rounded-full border-4 border-black w-32 h-32"
@@ -48,7 +56,7 @@ export function UserProfile({ user }: UserProfileProps) {
           <div className="flex-1">
             <h2 className="text-xl font-bold text-white">@{user.username}</h2>
             <p className="text-slate-400 text-sm mt-1">
-              {posts?.length || 0} posts
+              {posts?.length ?? 0} posts
             </p>
           </div>
         </div>
@@ -73,13 +81,11 @@ export function UserProfile({ user }: UserProfileProps) {
             </div>
             <h3 className="text-xl font-bold text-white mb-2">No posts yet</h3>
             <p className="text-slate-400 text-center max-w-sm">
-              When @{user.username} posts, they'll show up here.
+              When @{user.username} posts, they&apos;ll show up here.
             </p>
           </div>
         ) : (
-          posts.map(({ post, author }) => (
-            <PostView key={post.id} post={post} author={author} showLink={false} />
-          ))
+          postElements
         )}
       </div>
     </div>
