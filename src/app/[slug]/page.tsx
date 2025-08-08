@@ -1,31 +1,44 @@
-"use client";
+// src/app/[slug]/page.tsx
+import { api, HydrateClient } from "~/trpc/server";
+import { notFound } from "next/navigation";
+import { createCaller } from "~/server/api/root";
+import { createTRPCContext } from "~/server/api/trpc";
+import Head from "next/head";
+import { LatestPost } from "../_components/post";
+import { AuthForm } from "../_components/authform";
 
-import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { LoadingPage } from "~/app/_components/loading";
+export default async function ProfilePage({ 
+    params 
+  }: { 
+    params: Promise<{ slug: string }>
+  }) {
 
-dayjs.extend(relativeTime);
+    const { slug } = await params;
+  
+  const username = slug.slice(3);
 
-const ProfileView = () => {
-  const { data: posts, isLoading } = api.post.getAll.useQuery();
-  const { user } = useUser();
-  if (!user) return <div>Please sign in</div>;
 
-    if (isLoading) {
-        return <LoadingPage />;
-    }
-    if (!posts || posts.length === 0) {
-        return <div>No posts found</div>;
-    }
+const caller = createCaller(await createTRPCContext({ headers: new Headers() }));
 
-  return (
-    <div className="flex justify-center h-screen">
-        Profile View
-    </div>
-  );
+const user = (await caller.profile.getUserByUsername({ username }))[0];
+
+
+if (!user) {
+    return <div>User not found</div>;
 }
 
-export default ProfileView;
+return (
+    <HydrateClient>
+      <main className="flex justify-center min-h-screen bg-black">
+        <div className="bg-black border-2 border-slate-400 w-full md:max-w-2xl">
+          <div className="border-b border-slate-400 p-4">
+            <h1 className="text-xl font-bold text-white">Home</h1>
+          </div>
+          <AuthForm />
+          <LatestPost />
+        </div>
+      </main>
+    </HydrateClient>
+);
 
+}

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "./loading";
 
-const CreatePostWizard = () => {
+export const CreatePostWizard = () => {
   const { user } = useUser();
   const utils = api.useUtils();
   const { mutate: createPost, isPending } = api.post.create.useMutation({

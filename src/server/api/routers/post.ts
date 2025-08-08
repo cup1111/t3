@@ -1,18 +1,8 @@
 import { createTRPCRouter, publicProcedure, privateProcedure } from "~/server/api/trpc";
 import { clerkClient } from "@clerk/nextjs/server";
-import type { User } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-
-
-const filterUserForClient = (user: User) => {
-  return {
-    id: user.id,
-    username: user.username,
-    imageUrl: user.imageUrl,
-  };
-};
-
+import { filterUserForClient } from "~/server/helpers/filterUserForClients";
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
 
@@ -67,5 +57,39 @@ export const postRouter = createTRPCRouter({
       },
     });
     return post;
+  }),
+
+  getByUserId: privateProcedure
+  .input(z.object({ userId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const { userId } = input;
+    
+    const posts = await ctx.db.post.findMany({
+      where: {
+        authorId: userId,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    const clerk = await clerkClient();
+    const users = (await clerk.users.getUserList({
+      userId: posts.map((post) => post.authorId),
+      limit: 100,
+    })).data.map(filterUserForClient);
+
+    return posts.map((post) => {
+      const author = users.find((user) => user.id === post.authorId);
+      if (!author?.username) {
+        throw new TRPCError({ 
+          code: "INTERNAL_SERVER_ERROR", 
+          message: "Author not found" 
+        });
+      }
+      return { post, author: {
+        ...author,
+        username: author.username,
+      } };
+    });
   }),
 });
