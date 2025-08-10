@@ -43,9 +43,7 @@ export function PageHeader() {
           
           <div>
             <h1 className="text-xl font-bold text-white">{getTitle()}</h1>
-            {isProfilePage && (
-              <p className="text-slate-400 text-sm">0 posts</p>
-            )}
+
           </div>
         </div>
         
