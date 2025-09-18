@@ -46,17 +46,64 @@ export const postRouter = createTRPCRouter({
   ).mutation(async ({ ctx, input }) => {
     const { userId } = ctx;
     const { content } = input;
-    const { success } = await ratelimit.limit(userId);
-    if (!success) {
-      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "You are posting too fast. Please wait a moment before posting again." });
+    
+    try {
+      let rateLimitSuccess = true;
+      try {
+        const rateLimitResult = await ratelimit.limit(userId);
+        rateLimitSuccess = rateLimitResult.success;
+      } catch (rateLimitError: any) {
+        console.warn("Rate limiting service unavailable, skipping rate limit check:", rateLimitError.message);
+        rateLimitSuccess = true;
+      }
+      
+      if (!rateLimitSuccess) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "You are posting too fast. Please wait a moment before posting again." });
+      }
+      
+      const post = await ctx.db.post.create({
+        data: {
+          content: content,
+          authorId: userId,
+        },
+      });
+      return post;
+    } catch (error: any) {
+      console.error("Error in post.create:", error);
+      
+      if (error.code && error.code.startsWith('P')) {
+        if (error.code === 'P1001') {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Database connection failed. Please try again later.",
+          });
+        }
+        
+        if (error.code === 'P2002') {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "A post with this content already exists.",
+          });
+        }
+        
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database error occurred. Please try again.",
+        });
+      }
+      
+      if (error.code === 'ENOTFOUND' || error.message?.includes('fetch failed')) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Service temporarily unavailable. Please try again later.",
+        });
+      }
+      
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to create post. Please try again.",
+      });
     }
-    const post = await ctx.db.post.create({
-      data: {
-        content: content,
-        authorId: userId,
-      },
-    });
-    return post;
   }),
   getByUserId: privateProcedure
   .input(z.object({ userId: z.string() }))
