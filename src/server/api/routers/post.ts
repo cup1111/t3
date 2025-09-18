@@ -22,33 +22,43 @@ export const postRouter = createTRPCRouter({
         take: 100,
       });
 
-      console.log(`📊 Found ${posts.length} posts`);
-
       if (posts.length === 0) {
-        console.log('📭 No posts found');
         return [];
       }
 
       const clerk = await clerkClient();
-
       const authorIds = [...new Set(posts.map((post) => post.authorId))];
-      console.log(`👥 Need to fetch ${authorIds.length} users`);
 
-      const users = (await clerk.users.getUserList({
-        userId: authorIds,
-        limit: 100,
-      })).data.map(filterUserForClient);
-
-      console.log(`👤 Successfully fetched ${users.length} users`);
+      let users = [];
+      try {
+        const clerkResponse = await clerk.users.getUserList({
+          userId: authorIds,
+          limit: 100,
+        });
+        users = clerkResponse.data.map(filterUserForClient);
+      } catch (clerkError) {
+        // If Clerk fails, return posts with basic author info
+        return posts.map((post) => ({
+          post,
+          author: {
+            id: post.authorId,
+            username: `User_${post.authorId.slice(-6)}`,
+            imageUrl: '/default-avatar.svg',
+          }
+        }));
+      }
 
       return posts.map((post) => {
         const author = users.find((user) => user.id === post.authorId);
         if (!author?.username) {
-          console.error(`❌ Author not found, authorId: ${post.authorId}`);
-          throw new TRPCError({ 
-            code: "INTERNAL_SERVER_ERROR", 
-            message: `Author not found for post ${post.id}` 
-          });
+          return {
+            post,
+            author: {
+              id: post.authorId,
+              username: `User_${post.authorId.slice(-6)}`,
+              imageUrl: '/default-avatar.svg',
+            }
+          };
         }
         return { 
           post, 
@@ -59,7 +69,6 @@ export const postRouter = createTRPCRouter({
         };
       });
     } catch (error) {
-      console.error('❌ getAll query failed:', error);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch posts",
@@ -80,8 +89,7 @@ export const postRouter = createTRPCRouter({
         const rateLimitResult = await ratelimit.limit(userId);
         rateLimitSuccess = rateLimitResult.success;
       } catch (rateLimitError: unknown) {
-        const errorMessage = rateLimitError instanceof Error ? rateLimitError.message : 'Unknown error';
-        console.warn("Rate limiting service unavailable, skipping rate limit check:", errorMessage);
+        // If rate limiting fails, allow the request to proceed
         rateLimitSuccess = true;
       }
       
@@ -97,9 +105,6 @@ export const postRouter = createTRPCRouter({
       });
       return post;
     } catch (error: unknown) {
-      console.error("Error in post.create:", error);
-      
-
       if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
         if (error.code.startsWith('P')) {
           if (error.code === 'P1001') {
