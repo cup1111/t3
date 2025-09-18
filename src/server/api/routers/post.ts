@@ -149,38 +149,72 @@ export const postRouter = createTRPCRouter({
       });
     }
   }),
-  getByUserId: privateProcedure
+  getByUserId: publicProcedure
   .input(z.object({ userId: z.string() }))
   .query(async ({ ctx, input }) => {
-    const { userId } = input;
-    
-    const posts = await ctx.db.post.findMany({
-      where: {
-        authorId: userId,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    try {
+      const { userId } = input;
+      
+      const posts = await ctx.db.post.findMany({
+        where: {
+          authorId: userId,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
 
-    const clerk = await clerkClient();
-    const users = (await clerk.users.getUserList({
-      userId: posts.map((post) => post.authorId),
-      limit: 100,
-    })).data.map(filterUserForClient);
-
-    return posts.map((post) => {
-      const author = users.find((user) => user.id === post.authorId);
-      if (!author?.username) {
-        throw new TRPCError({ 
-          code: "INTERNAL_SERVER_ERROR", 
-          message: "Author not found" 
-        });
+      if (posts.length === 0) {
+        return [];
       }
-      return { post, author: {
-        ...author,
-        username: author.username,
-      } };
-    });
+
+      const clerk = await clerkClient();
+      const authorIds = [...new Set(posts.map((post) => post.authorId))];
+
+      let users = [];
+      try {
+        const clerkResponse = await clerk.users.getUserList({
+          userId: authorIds,
+          limit: 100,
+        });
+        users = clerkResponse.data.map(filterUserForClient);
+      } catch (clerkError) {
+        // If Clerk fails, return posts with basic author info
+        return posts.map((post) => ({
+          post,
+          author: {
+            id: post.authorId,
+            username: `User_${post.authorId.slice(-6)}`,
+            imageUrl: '/default-avatar.svg',
+          }
+        }));
+      }
+
+      return posts.map((post) => {
+        const author = users.find((user) => user.id === post.authorId);
+        if (!author?.username) {
+          return {
+            post,
+            author: {
+              id: post.authorId,
+              username: `User_${post.authorId.slice(-6)}`,
+              imageUrl: '/default-avatar.svg',
+            }
+          };
+        }
+        return { 
+          post, 
+          author: {
+            ...author,
+            username: author.username,
+          } 
+        };
+      });
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch user posts",
+      });
+    }
   }),
   delete: privateProcedure
   .input(z.object({ postId: z.string() }))

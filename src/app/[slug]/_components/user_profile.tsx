@@ -17,10 +17,10 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ user }: UserProfileProps) {
-  const { data: posts, isLoading } = api.post.getByUserId.useQuery({ 
+  const { data: posts, isLoading, error } = api.post.getByUserId.useQuery({ 
     userId: user.id 
   });
-  const { user: currentUser } = useUser();
+  const { user: currentUser, isLoaded } = useUser();
 
   const postElements = useMemo(() => {
     if (!posts) return null;
@@ -72,7 +72,19 @@ export function UserProfile({ user }: UserProfileProps) {
           <div className="flex justify-center items-center py-12">
             <LoadingPage />
           </div>
-        ) : !posts ? (
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Error loading posts</h3>
+            <p className="text-slate-400 text-center max-w-sm">
+              {error.message}
+            </p>
+          </div>
+        ) : !posts || posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-slate-400" fill="currentColor" viewBox="0 0 24 24">

@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "./loading";
 
 export const CreatePostWizard = () => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const utils = api.useUtils();
   const [input, setInput] = useState("");
   
@@ -33,7 +33,7 @@ export const CreatePostWizard = () => {
     }
   };
 
-  if (!user) return null;
+  if (!isLoaded || !user) return null;
   
   return (
     <div className="flex w-full items-center gap-3 p-4 border-b border-t border-slate-400">

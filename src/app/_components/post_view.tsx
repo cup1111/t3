@@ -25,7 +25,7 @@ interface PostViewProps {
 }
 
 export function PostView({ post, author, showLink = true }: PostViewProps) {
-  const { user: currentUser } = useUser();
+  const { user: currentUser, isLoaded } = useUser();
   const utils = api.useUtils();
   
   const { mutate: deletePost, isPending: isDeleting } = api.post.delete.useMutation({
@@ -43,7 +43,7 @@ export function PostView({ post, author, showLink = true }: PostViewProps) {
     deletePost({ postId: post.id });
   };
 
-  const isAuthor = currentUser?.id === author.id;
+  const isAuthor = isLoaded && currentUser?.id === author.id;
 
   return (
     <div className="flex gap-3 p-4 border-b border-slate-400 hover:bg-slate-900 transition-colors">

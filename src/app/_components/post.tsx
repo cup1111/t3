@@ -8,7 +8,7 @@ import { useMemo } from "react";
 
 export function LatestPost() {
   const { data: posts, isLoading, error } = api.post.getAll.useQuery();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   
   const postElements = useMemo(() => {
     if (!posts || posts.length === 0) {
@@ -24,7 +24,7 @@ export function LatestPost() {
     ));
   }, [posts]);
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return <LoadingPage />;
   }
   
