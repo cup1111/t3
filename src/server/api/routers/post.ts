@@ -6,7 +6,6 @@ import { filterUserForClient } from "~/server/helpers/filterUserForClients";
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
 
-// Create a new ratelimiter, that allows 3 requests per 100 seconds
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
   limiter: Ratelimit.slidingWindow(3, "100 s"),
@@ -17,27 +16,55 @@ const ratelimit = new Ratelimit({
 
 export const postRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    const posts = await ctx.db.post.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    try {
+      const posts = await ctx.db.post.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
 
-    const clerk = await clerkClient();
+      console.log(`📊 Found ${posts.length} posts`);
 
-    const users = (await clerk.users.getUserList({
-      userId: posts.map((post) => post.authorId),
-      limit: 100,
-    })
-    ).data.map(filterUserForClient);
+      if (posts.length === 0) {
+        console.log('📭 No posts found');
+        return [];
+      }
 
-    return posts.map((post) => {
-      const author = users.find((user) => user.id === post.authorId);
-      if (!author?.username) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Author not found" });
-      return { post, author: {
-        ...author,
-        username: author.username,
-      } };
-    });
+      const clerk = await clerkClient();
+
+      const authorIds = [...new Set(posts.map((post) => post.authorId))];
+      console.log(`👥 Need to fetch ${authorIds.length} users`);
+
+      const users = (await clerk.users.getUserList({
+        userId: authorIds,
+        limit: 100,
+      })).data.map(filterUserForClient);
+
+      console.log(`👤 Successfully fetched ${users.length} users`);
+
+      return posts.map((post) => {
+        const author = users.find((user) => user.id === post.authorId);
+        if (!author?.username) {
+          console.error(`❌ Author not found, authorId: ${post.authorId}`);
+          throw new TRPCError({ 
+            code: "INTERNAL_SERVER_ERROR", 
+            message: `Author not found for post ${post.id}` 
+          });
+        }
+        return { 
+          post, 
+          author: {
+            ...author,
+            username: author.username,
+          } 
+        };
+      });
+    } catch (error) {
+      console.error('❌ getAll query failed:', error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch posts",
+      });
+    }
   }),
   create: privateProcedure.input(
     z.object({
@@ -72,7 +99,7 @@ export const postRouter = createTRPCRouter({
     } catch (error: unknown) {
       console.error("Error in post.create:", error);
       
-      // 检查是否是 Prisma 错误
+
       if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
         if (error.code.startsWith('P')) {
           if (error.code === 'P1001') {
@@ -103,7 +130,7 @@ export const postRouter = createTRPCRouter({
         }
       }
       
-      // 检查是否是网络错误
+
       if (error instanceof Error && error.message?.includes('fetch failed')) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
