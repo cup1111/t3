@@ -52,8 +52,9 @@ export const postRouter = createTRPCRouter({
       try {
         const rateLimitResult = await ratelimit.limit(userId);
         rateLimitSuccess = rateLimitResult.success;
-      } catch (rateLimitError: any) {
-        console.warn("Rate limiting service unavailable, skipping rate limit check:", rateLimitError.message);
+      } catch (rateLimitError: unknown) {
+        const errorMessage = rateLimitError instanceof Error ? rateLimitError.message : 'Unknown error';
+        console.warn("Rate limiting service unavailable, skipping rate limit check:", errorMessage);
         rateLimitSuccess = true;
       }
       
@@ -68,31 +69,42 @@ export const postRouter = createTRPCRouter({
         },
       });
       return post;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in post.create:", error);
       
-      if (error.code && error.code.startsWith('P')) {
-        if (error.code === 'P1001') {
+      // 检查是否是 Prisma 错误
+      if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
+        if (error.code.startsWith('P')) {
+          if (error.code === 'P1001') {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Database connection failed. Please try again later.",
+            });
+          }
+          
+          if (error.code === 'P2002') {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "A post with this content already exists.",
+            });
+          }
+          
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Database connection failed. Please try again later.",
+            message: "Database error occurred. Please try again.",
           });
         }
         
-        if (error.code === 'P2002') {
+        if (error.code === 'ENOTFOUND') {
           throw new TRPCError({
-            code: "CONFLICT",
-            message: "A post with this content already exists.",
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Service temporarily unavailable. Please try again later.",
           });
         }
-        
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database error occurred. Please try again.",
-        });
       }
       
-      if (error.code === 'ENOTFOUND' || error.message?.includes('fetch failed')) {
+      // 检查是否是网络错误
+      if (error instanceof Error && error.message?.includes('fetch failed')) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Service temporarily unavailable. Please try again later.",
