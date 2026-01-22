@@ -1,6 +1,16 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default clerkMiddleware();
+/**
+ * Middleware: Verify JWT token (if needed)
+ * Currently allows all requests through, token verification happens in tRPC context
+ */
+export function middleware(request: NextRequest) {
+  // Additional middleware logic can be added here
+  // For example: check authentication requirements for specific routes
+  
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

@@ -1,8 +1,6 @@
 import { createTRPCRouter, publicProcedure, privateProcedure } from "~/server/api/trpc";
-import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { filterUserForClient } from "~/server/helpers/filterUserForClients";
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
 
@@ -26,46 +24,37 @@ export const postRouter = createTRPCRouter({
         return [];
       }
 
-      const clerk = await clerkClient();
+      // Get all author information
       const authorIds = [...new Set(posts.map((post) => post.authorId))];
+      const users = await ctx.db.user.findMany({
+        where: {
+          id: { in: authorIds },
+        },
+        select: {
+          id: true,
+          username: true,
+          imageUrl: true,
+        },
+      });
 
-      let users = [];
-      try {
-        const clerkResponse = await clerk.users.getUserList({
-          userId: authorIds,
-          limit: 100,
-        });
-        users = clerkResponse.data.map(filterUserForClient);
-      } catch (clerkError) {
-        // If Clerk fails, return posts with basic author info
-        return posts.map((post) => ({
-          post,
-          author: {
-            id: post.authorId,
-            username: `User_${post.authorId.slice(-6)}`,
-            imageUrl: '/default-avatar.svg',
-          }
-        }));
-      }
+      // Create user map
+      const userMap = new Map(users.map((user) => [user.id, user]));
 
       return posts.map((post) => {
-        const author = users.find((user) => user.id === post.authorId);
-        if (!author?.username) {
-          return {
-            post,
-            author: {
-              id: post.authorId,
-              username: `User_${post.authorId.slice(-6)}`,
-              imageUrl: '/default-avatar.svg',
-            }
-          };
-        }
-        return { 
-          post, 
-          author: {
-            ...author,
-            username: author.username,
-          } 
+        const author = userMap.get(post.authorId);
+        return {
+          post,
+          author: author
+            ? {
+                id: author.id,
+                username: author.username,
+                imageUrl: author.imageUrl ?? "/default-avatar.svg",
+              }
+            : {
+                id: post.authorId,
+                username: `User_${post.authorId.slice(-6)}`,
+                imageUrl: "/default-avatar.svg",
+              },
         };
       });
     } catch (error) {
@@ -77,11 +66,22 @@ export const postRouter = createTRPCRouter({
   }),
   create: privateProcedure.input(
     z.object({
-      content: z.string().emoji("Only emojis are allowed").min(1).max(280),
+      content: z.string()
+        .emoji("Only emojis are allowed")
+        .min(1, "Content cannot be empty")
+        .max(280, "Content cannot exceed 280 characters")
+        .trim()
+        .refine(
+          (val) => val.length > 0,
+          "Content cannot be empty after trimming"
+        ),
     })
   ).mutation(async ({ ctx, input }) => {
     const { userId } = ctx;
     const { content } = input;
+    
+    // Additional sanitization: remove any potential whitespace issues
+    const sanitizedContent = content.trim();
     
     try {
       let rateLimitSuccess = true;
@@ -99,7 +99,7 @@ export const postRouter = createTRPCRouter({
       
       const post = await ctx.db.post.create({
         data: {
-          content: content,
+          content: sanitizedContent,
           authorId: userId,
         },
       });
@@ -150,74 +150,74 @@ export const postRouter = createTRPCRouter({
     }
   }),
   getByUserId: publicProcedure
-  .input(z.object({ userId: z.string() }))
-  .query(async ({ ctx, input }) => {
-    try {
-      const { userId } = input;
-      
-      const posts = await ctx.db.post.findMany({
-        where: {
-          authorId: userId,
-        },
-        orderBy: { createdAt: "desc" },
-        take: 100,
-      });
-
-      if (posts.length === 0) {
-        return [];
-      }
-
-      const clerk = await clerkClient();
-      const authorIds = [...new Set(posts.map((post) => post.authorId))];
-
-      let users = [];
+    .input(
+      z.object({
+        userId: z
+          .string()
+          .min(1, "User ID cannot be empty")
+          .max(255, "User ID is too long"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
       try {
-        const clerkResponse = await clerk.users.getUserList({
-          userId: authorIds,
-          limit: 100,
-        });
-        users = clerkResponse.data.map(filterUserForClient);
-      } catch (clerkError) {
-        // If Clerk fails, return posts with basic author info
-        return posts.map((post) => ({
-          post,
-          author: {
-            id: post.authorId,
-            username: `User_${post.authorId.slice(-6)}`,
-            imageUrl: '/default-avatar.svg',
-          }
-        }));
-      }
+        const { userId } = input;
 
-      return posts.map((post) => {
-        const author = users.find((user) => user.id === post.authorId);
-        if (!author?.username) {
+        const posts = await ctx.db.post.findMany({
+          where: {
+            authorId: userId,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        });
+
+        if (posts.length === 0) {
+          return [];
+        }
+
+        // Get all author information
+        const authorIds = [...new Set(posts.map((post) => post.authorId))];
+        const users = await ctx.db.user.findMany({
+          where: {
+            id: { in: authorIds },
+          },
+          select: {
+            id: true,
+            username: true,
+            imageUrl: true,
+          },
+        });
+
+        // Create user map
+        const userMap = new Map(users.map((user) => [user.id, user]));
+
+        return posts.map((post) => {
+          const author = userMap.get(post.authorId);
           return {
             post,
-            author: {
-              id: post.authorId,
-              username: `User_${post.authorId.slice(-6)}`,
-              imageUrl: '/default-avatar.svg',
-            }
+            author: author
+              ? {
+                  id: author.id,
+                  username: author.username,
+                  imageUrl: author.imageUrl ?? "/default-avatar.svg",
+                }
+              : {
+                  id: post.authorId,
+                  username: `User_${post.authorId.slice(-6)}`,
+                  imageUrl: "/default-avatar.svg",
+                },
           };
-        }
-        return { 
-          post, 
-          author: {
-            ...author,
-            username: author.username,
-          } 
-        };
-      });
-    } catch (error) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch user posts",
-      });
-    }
-  }),
+        });
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch user posts",
+        });
+      }
+    }),
   delete: privateProcedure
-  .input(z.object({ postId: z.string() }))
+  .input(z.object({ 
+    postId: z.string().min(1, "Post ID cannot be empty").cuid("Invalid post ID format")
+  }))
   .mutation(async ({ ctx, input }) => {
     const { userId } = ctx;
     const { postId } = input;

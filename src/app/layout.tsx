@@ -3,12 +3,10 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import {
-  ClerkProvider,
-} from '@clerk/nextjs';
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "react-hot-toast";
 import { ErrorBoundary } from "~/app/_components/error_boundary";
+import { AuthProvider } from "~/contexts/auth-context";
 
 export const metadata: Metadata = {
   title: 'T3-Clone',
@@ -30,15 +28,17 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
-      <Toaster position="bottom-center" />
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} data-cursorstyle="true" data-effect-ective="true">
-        <body>
-          <ErrorBoundary>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
-          </ErrorBoundary>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`} data-cursorstyle="true" data-effect-ective="true">
+      <body>
+        <ErrorBoundary>
+          <TRPCReactProvider>
+            <AuthProvider>
+              <Toaster position="bottom-center" />
+              {children}
+            </AuthProvider>
+          </TRPCReactProvider>
+        </ErrorBoundary>
+      </body>
+    </html>
   );
 }

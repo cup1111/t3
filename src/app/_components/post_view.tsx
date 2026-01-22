@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/contexts/auth-context";
 import { toast } from "react-hot-toast";
 
 dayjs.extend(relativeTime);
@@ -25,55 +25,55 @@ interface PostViewProps {
 }
 
 export function PostView({ post, author, showLink = true }: PostViewProps) {
-  const { user: currentUser, isLoaded } = useUser();
+  const { user: currentUser } = useAuth();
   const utils = api.useUtils();
-  
-  const { mutate: deletePost, isPending: isDeleting } = api.post.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Post deleted successfully");
-      void utils.post.getAll.invalidate();
-      void utils.post.getByUserId.invalidate();
-    },
-    onError: () => {
-      toast.error("Failed to delete post");
-    }
-  });
+
+  const { mutate: deletePost, isPending: isDeleting } =
+    api.post.delete.useMutation({
+      onSuccess: () => {
+        toast.success("Post deleted successfully");
+        void utils.post.getAll.invalidate();
+        void utils.post.getByUserId.invalidate();
+      },
+      onError: () => {
+        toast.error("Failed to delete post");
+      },
+    });
 
   const handleDelete = () => {
     deletePost({ postId: post.id });
   };
 
-  const isAuthor = isLoaded && currentUser?.id === author.id;
+  const isAuthor = currentUser?.id === author.id;
 
   return (
-    <div className="flex gap-3 p-4 border-b border-slate-400 hover:bg-slate-900 transition-colors">
-      <Image 
-        src={author.imageUrl} 
-        alt={`${author.username}&apos;s profile image`} 
-        width={48} 
-        height={48} 
-        className="rounded-full h-12 w-12 flex-shrink-0"
-      />
-      <div className="flex flex-col flex-1">
-        <div className="flex text-slate-300 font-medium gap-2 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href={`/@${author.username}`} className="hover:text-white transition-colors">
-              <span>{`@${author.username}`}</span>
-            </Link>
-            {showLink ? (
-              <span className="hover:text-white transition-colors">
-                <span className="font-thin">{`· ${dayjs(post.createdAt).fromNow()}`}</span>
-              </span>
-            ) : (
-              <span className="font-thin">{`· ${dayjs(post.createdAt).fromNow()}`}</span>
-            )}
-          </div>
-          
+    <div className="flex gap-4 p-5 border-b border-slate-800/50 hover:bg-gradient-to-r hover:from-slate-900/50 hover:via-slate-800/30 hover:to-slate-900/50 transition-all duration-200 group">
+      <Link href={`/@${author.username}`} className="flex-shrink-0">
+        <Image
+          src={author.imageUrl ?? "/default-avatar.svg"}
+          alt={`${author.username}'s profile image`}
+          width={48}
+          height={48}
+          className="rounded-full h-12 w-12 ring-2 ring-slate-700/50 group-hover:ring-blue-500/50 transition-all"
+        />
+      </Link>
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Link 
+            href={`/@${author.username}`} 
+            className="font-semibold text-white hover:text-blue-400 transition-colors"
+          >
+            @{author.username}
+          </Link>
+          <span className="text-slate-500">·</span>
+          <span className="text-sm text-slate-500">
+            {dayjs(post.createdAt).fromNow()}
+          </span>
           {isAuthor && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-full hover:bg-red-900/20"
+              className="ml-auto text-slate-500 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
               title="Delete post"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -82,7 +82,9 @@ export function PostView({ post, author, showLink = true }: PostViewProps) {
             </button>
           )}
         </div>
-        <div className="text-white text-lg mt-1 leading-relaxed">{post.content}</div>
+        <div className="text-white text-xl leading-relaxed break-words">
+          {post.content}
+        </div>
       </div>
     </div>
   );
