@@ -1,6 +1,6 @@
 "use client";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "~/contexts/auth-context";
 import Image from "next/image";
 import { LoadingPage } from "~/app/_components/loading";
 import { CreatePostWizard } from "~/app/_components/create_post_wizard";
@@ -12,15 +12,15 @@ interface UserProfileProps {
   user: {
     id: string;
     username: string;
-    imageUrl: string;
+    imageUrl: string | null;
   };
 }
 
 export function UserProfile({ user }: UserProfileProps) {
-  const { data: posts, isLoading, error } = api.post.getByUserId.useQuery({ 
-    userId: user.id 
+  const { data: posts, isLoading, error } = api.post.getByUserId.useQuery({
+    userId: user.id,
   });
-  const { user: currentUser, isLoaded } = useUser();
+  const { user: currentUser } = useAuth();
 
   const postElements = useMemo(() => {
     if (!posts) return null;
@@ -40,11 +40,11 @@ export function UserProfile({ user }: UserProfileProps) {
         
 
         <div className="absolute -bottom-16 left-4">
-          <Image 
-            src={user.imageUrl} 
-            alt={`${user.username}&apos;s profile image`} 
-            width={128} 
-            height={128} 
+          <Image
+            src={user.imageUrl ?? "/default-avatar.svg"}
+            alt={`${user.username}'s profile image`}
+            width={128}
+            height={128}
             className="rounded-full border-4 border-black w-32 h-32"
           />
         </div>

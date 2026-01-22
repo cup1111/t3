@@ -10,8 +10,14 @@ import { createTRPCContext } from "~/server/api/trpc";
  * handling a HTTP request (e.g. when you make requests from Client Components).
  */
 const createContext = async (req: NextRequest) => {
+  // Get authorization header from request
+  const headers = new Headers();
+  req.headers.forEach((value, key) => {
+    headers.set(key, value);
+  });
+  
   return createTRPCContext({
-    headers: req.headers,
+    headers,
   });
 };
 

@@ -9,9 +9,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { auth } from "@clerk/nextjs/server";
 
 import { db } from "~/server/db";
+import { verifyToken, extractTokenFromHeader } from "~/server/auth/jwt";
 
 /**
  * 1. CONTEXT
@@ -26,7 +26,19 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const { userId } = await auth();
+  // Extract token from request header
+  const authHeader = opts.headers.get("authorization");
+  const token = extractTokenFromHeader(authHeader);
+  
+  let userId: string | null = null;
+  
+  // Verify token and get user ID
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) {
+      userId = payload.userId;
+    }
+  }
 
   return {
     db,
@@ -44,7 +56,15 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
  */
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  errorFormatter({ shape, error, path }) {
+    // Log errors in development and production (but with different detail levels)
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[tRPC Error] ${path ?? "<no-path>"}:`, error);
+    } else {
+      // In production, log errors without sensitive data
+      console.error(`[tRPC Error] ${path ?? "<no-path>"}: ${error.message}`);
+    }
+
     return {
       ...shape,
       data: {
